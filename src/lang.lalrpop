@@ -1,0 +1,27 @@
+use std::str::FromStr;
+use ast::{Action, Item}; // (0)
+
+grammar;
+
+Num: i32 = {
+    <s:r"[0-9]+"> => i32::from_str(s).unwrap(),
+    "a" => 1,
+    "an" => 1,
+    "one" => 1,
+    "two" => 2,
+    "three" => 3,
+    "four" => 4,
+    "five" => 5,
+    "six" => 6,
+    "seven" => 7,
+    "eight" => 8,
+    "nine" => 9
+}
+
+CardItem:  Box<Item> = {
+    <s:r"[a-zA-Z]+"> "card"  => Box::new(Item::Card(<>))
+}
+
+pub DrawAction: i32 = {
+    "draw" <n:Num> <i:CardItem> => n
+}
