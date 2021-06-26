@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use ast::{Action, Item}; // (0)
+use crate::ast::{Action, Resource, ResourcePool, FaceDirection}; // (0)
 
 grammar;
 
@@ -18,10 +18,48 @@ Num: i32 = {
     "nine" => 9
 }
 
-CardItem:  Box<Item> = {
-    <s:r"[a-zA-Z]+"> "card"  => Box::new(Item::Card(<>))
+CardDefinition:  Box<Resource> = {
+    <s:r"[a-zA-Z]*"> "card"  => Box::new(Resource::Card(String::from_str(<>).unwrap()))
 }
 
-pub DrawAction: i32 = {
-    "draw" <n:Num> <i:CardItem> => n
+pub ResourcePoolSelection: Box<ResourcePool> = {
+    "the" <s:r"[a-zA-Z]*"> "deck" => Box::new(ResourcePool::Deck(String::from_str(<>).unwrap())),
+
+    "the" "discard" "pile" => Box::new(ResourcePool::Discard),
+    "your" "discard" "pile" => Box::new(ResourcePool::Discard),
+    "his" "discard" "pile" => Box::new(ResourcePool::Discard),
+
+    "your" "hand" => Box::new(ResourcePool::Hand),
+    "his" "hand" => Box::new(ResourcePool::Hand),
+    
+}
+
+pub SourceResoucePoolSelection: Box<ResourcePool> = {
+    "from" <r:ResourcePoolSelection> => r
+}
+
+pub TargetResoucePoolSelection: Box<ResourcePool> = {
+    "into" <r:ResourcePoolSelection> => r
+}
+
+FaceDirectionSelection: FaceDirection = {
+    "face" "up" => FaceDirection::FaceUp,
+    "face" "down" => FaceDirection::FaceDown
+}
+
+pub DrawAction: Box<Action> = {
+    "draw" <n:Num> <i:CardDefinition> <r:SourceResoucePoolSelection?> <f: FaceDirectionSelection?> => {
+        
+        let face_dir = match f {
+            None => FaceDirection::FaceDown,
+            Some(ff) => ff
+        };
+
+        let source_pool = match r {
+            None => Box::new(ResourcePool::Deck(String::from_str("main").unwrap())),
+            Some(rr) => rr
+        };
+     
+        Box::new(Action::Draw(n, i, source_pool, face_dir))
+    }
 }
